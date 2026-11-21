@@ -3,32 +3,60 @@ import pandas as pd
 df = pd.read_csv("data/raw/train.csv")
 
 df["date"] = pd.to_datetime(df["date"])
-df = df.sort_values("date").reset_index(drop=True)
+df = df.sort_values("date")
 
 numeric_columns = df.select_dtypes(include="number").columns
+all_dates = pd.date_range(df["date"].min(), df["date"].max())
 
-found = False
+min_days = 14
 
 for col in numeric_columns:
-    # Identify consecutive records with the same reading.
-    groups = df[col].ne(df[col].shift()).cumsum()
+    daily = df.groupby("date")[col].agg(nunique="nunique", value="first")
 
-    runs = df.groupby(groups).agg(
-        value=(col, "first"),
-        records=(col, "size"),
-        start_date=("date", "min"),
-        end_date=("date", "max"),
-        unique_dates=("date", "nunique"),
-    )
+    start = None
+    previous_date = None
+    current_value = None
+    count = 0
 
-    # Look for readings repeated across at least 7 different dates.
-    runs["duration_days"] = (runs["end_date"] - runs["start_date"]).dt.days
-    runs = runs[(runs["unique_dates"] >= 7) & (runs["duration_days"] >= 14)]
+    print(f"\n========== {col} ==========")
 
-    if not runs.empty:
-        found = True
-        print(f"\nCOLUMN: {col}")
-        print(runs.to_string(index=False))
+    for date in all_dates:
+        if date in daily.index and daily.loc[date, "nunique"] == 1:
+            value = daily.loc[date, "value"]
 
-if not found:
-    print("No repeated readings across 7 or more dates found.")
+            if (
+                previous_date is not None
+                and (date - previous_date).days == 1
+                and value == current_value
+            ):
+                count += 1
+            else:
+                if count >= min_days:
+                    print("Value:", current_value)
+                    print("Start:", start.date())
+                    print("End:", previous_date.date())
+                    print("Consecutive days:", count)
+
+                start = date
+                current_value = value
+                count = 1
+
+            previous_date = date
+
+        else:
+            if count >= min_days:
+                print("Value:", current_value)
+                print("Start:", start.date())
+                print("End:", previous_date.date())
+                print("Consecutive days:", count)
+
+            start = None
+            previous_date = None
+            current_value = None
+            count = 0
+
+    if count >= min_days:
+        print("Value:", current_value)
+        print("Start:", start.date())
+        print("End:", previous_date.date())
+        print("Consecutive days:", count)

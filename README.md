@@ -14,9 +14,9 @@
 | Enrollment Number | Name |
 |---|---|
 | S24CSEU1190 | Divyansh Tyagi |
-| S24CSEU1174 | GARVITNARANG |
-| S24CSEU1185 | SamairaYadav |
-| S24CSEU1206 | VaibhavRajputSingh |
+| S24CSEU1174 | Garvit Narang|
+| S24CSEU1185 | Samaira Yadav |
+| S24CSEU1206 | Daksh Nagarkoti |
 
 ## Objective
 
